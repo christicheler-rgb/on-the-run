@@ -13,6 +13,11 @@ type DayRow = {
   values: Record<string, number | null>;
 };
 
+export type CurveHistory = {
+  rows: DayRow[];
+  source: YieldCurveSnapshot["source"];
+};
+
 const TREASURY_XML = (year: number) =>
   `https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml?data=daily_treasury_yield_curve&field_tdr_date_value=${year}`;
 
@@ -235,7 +240,7 @@ function buildSnapshot(rows: DayRow[], source: YieldCurveSnapshot["source"]): Yi
   };
 }
 
-async function loadFromTreasury(): Promise<YieldCurveSnapshot> {
+async function rowsFromTreasury(): Promise<DayRow[]> {
   const year = new Date().getUTCFullYear();
   const years = [year - 1, year];
   const settled = await Promise.allSettled(
@@ -244,12 +249,10 @@ async function loadFromTreasury(): Promise<YieldCurveSnapshot> {
   const groups = settled
     .filter((r): r is PromiseFulfilledResult<DayRow[]> => r.status === "fulfilled")
     .map((r) => r.value);
-  const rows = mergeRows(groups);
-  if (!rows.length) throw new Error("Treasury feed returned no closes.");
-  return buildSnapshot(rows, "US Treasury");
+  return mergeRows(groups);
 }
 
-async function loadFromFred(): Promise<YieldCurveSnapshot> {
+async function rowsFromFred(): Promise<DayRow[]> {
   const settled = await Promise.allSettled(
     FRED_BATCHES.map(async (ids) =>
       parseFredCsv(await fetchText(`https://fred.stlouisfed.org/graph/fredgraph.csv?id=${ids}`)),
@@ -258,23 +261,30 @@ async function loadFromFred(): Promise<YieldCurveSnapshot> {
   const groups = settled
     .filter((r): r is PromiseFulfilledResult<DayRow[]> => r.status === "fulfilled")
     .map((r) => r.value);
-  const rows = mergeRows(groups);
-  if (!rows.length) throw new Error("FRED feed returned no closes.");
-  return buildSnapshot(rows, "FRED");
+  return mergeRows(groups);
 }
 
-async function loadFresh(): Promise<YieldCurveSnapshot> {
+export async function loadCurveHistory(): Promise<CurveHistory> {
   try {
-    return await loadFromTreasury();
+    const rows = await rowsFromTreasury();
+    if (!rows.length) throw new Error("Treasury feed returned no closes.");
+    return { rows, source: "US Treasury" };
   } catch (treasuryError) {
     try {
-      return await loadFromFred();
+      const rows = await rowsFromFred();
+      if (!rows.length) throw new Error("FRED feed returned no closes.");
+      return { rows, source: "FRED" };
     } catch {
       throw treasuryError instanceof Error
         ? treasuryError
         : new Error("Could not load Treasury yields.");
     }
   }
+}
+
+async function loadFresh(): Promise<YieldCurveSnapshot> {
+  const { rows, source } = await loadCurveHistory();
+  return buildSnapshot(rows, source);
 }
 
 export const getYieldCurve = createServerFn({ method: "POST" }).handler(

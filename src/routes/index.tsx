@@ -4,6 +4,7 @@ import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { RefreshCw } from "lucide-react";
 import { CurveChart } from "@/components/curve-chart";
 import { KeyRates, SpreadRow } from "@/components/key-rates";
+import { RateMenu } from "@/components/rate-menu";
 import { YieldTable } from "@/components/yield-table";
 import { getYieldCurve } from "@/lib/treasury/get-yield-curve";
 import { curveShape, describeCurve } from "@/lib/treasury/model";
@@ -108,6 +109,9 @@ function Home() {
       </div>
       <div className="mt-6">
         <CurveChart data={data} />
+      </div>
+      <div className="mt-6">
+        <RateMenu curve={data} />
       </div>
       <div className="mt-6">
         <YieldTable data={data} />

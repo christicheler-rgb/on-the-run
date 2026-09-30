@@ -10,10 +10,11 @@ Live **U.S. Treasury par yield curve** — bills, notes, and bonds — with the 
 - Key rates: 10-year, 3-month, 2-year, 30-year, with basis-point changes
 - Spreads: 2s10s, 3m10y, 10s30s, 20s30s, with inversion flags
 - Tenor book for every major bill, note, and bond, filterable by type
+- Drill-down on each node: five desk equities with the largest one-year price response to a 100 bp move in that yield
 - Automatic refresh on focus and every 15 minutes
 - FRED fallback if the Treasury XML feed is unreachable
 
-Source: [U.S. Department of the Treasury, Daily Treasury Par Yield Curve Rates](https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve), with [FRED](https://fred.stlouisfed.org/) as backup.
+Data: [U.S. Department of the Treasury, Daily Treasury Par Yield Curve Rates](https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve), with [FRED](https://fred.stlouisfed.org/) as backup. Equity sensitivities use adjusted closes from Yahoo Finance, regressed on the daily change in each tenor over the trailing year, inside a fixed desk — not a whole-market screen.
 
 ## Stack
 
